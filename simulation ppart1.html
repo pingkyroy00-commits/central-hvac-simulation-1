@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central AC System Simulation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            margin-bottom: 5px;
+            color: #38bdf8;
+        }
+        p.subtitle {
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 800px;
+            max-width: 100%;
+            text-align: center;
+        }
+        .dashboard {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .stat-box span {
+            display: block;
+            font-size: 20px;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        .stat-box label {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .system-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            background: #111827;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            min-height: 200px;
+        }
+        .unit {
+            border: 2px solid #475569;
+            border-radius: 8px;
+            padding: 20px;
+            width: 220px;
+            background: #1f2937;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .unit.active {
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+        .unit h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #e2e8f0;
+        }
+        .pipe-line {
+            flex-grow: 1;
+            height: 6px;
+            background: #334155;
+            position: relative;
+            margin: 0 15px;
+            overflow: hidden;
+        }
+        .flow-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #38bdf8;
+            border-radius: 50%;
+            top: -3px;
+            animation: none;
+        }
+        .system-running .flow-dot {
+            animation: flowAnimation 1.5s linear infinite;
+        }
+        @keyframes flowAnimation {
+            0% { left: 0%; opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { left: 100%; opacity: 0.2; }
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #powerBtn {
+            background-color: #ef4444;
+            color: white;
+        }
+        #powerBtn.on {
+            background-color: #22c55e;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            background: #334155;
+            color: #94a3b8;
+        }
+        .status-badge.active {
+            background: #065f46;
+            color: #34d399;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Central AC System</h1>
+        <p class="subtitle">Live Interactive Simulation for Presentation</p>
+
+        <div class="dashboard">
+            <div class="stat-box">
+                <span id="statusText">OFF</span>
+                <label>System Status</label>
+            </div>
+            <div class="stat-box">
+                <span id="tempText">28°C</span>
+                <label>Room Temperature</label>
+            </div>
+            <div class="stat-box">
+                <span id="modeText">Standby</span>
+                <label>Operating Mode</label>
+            </div>
+        </div>
+
+        <div class="system-diagram" id="diagramBox">
+            <!-- Indoor Unit -->
+            <div class="unit" id="indoorUnit">
+                <h3>Indoor Unit</h3>
+                <p style="font-size: 13px; color: #94a3b8;">Evaporator & Air Handler</p>
+                <div id="airBlow" style="font-size: 12px; color: #38bdf8; margin-top: 10px;">Air Flow: Stopped</div>
+            </div>
+
+            <!-- Connecting Pipes -->
+            <div class="pipe-line">
+                <div class="flow-dot"></div>
+            </div>
+
+            <!-- Outdoor Unit -->
+            <div class="unit" id="outdoorUnit">
+                <h3>Outdoor Unit</h3>
+                <p style="font-size: 13px; color: #94a3b8;">Compressor & Condenser</p>
+                <div id="compStatus" style="font-size: 12px; color: #ef4444; margin-top: 10px;">Compressor: Idle</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="powerBtn" onclick="toggleSystem()">Turn ON System</button>
+        </div>
+    </div>
+
+    <script>
+        let isOn = false;
+        let currentTemp = 28;
+
+        function toggleSystem() {
+            isOn = !isOn;
+            const powerBtn = document.getElementById('powerBtn');
+            const indoorUnit = document.getElementById('indoorUnit');
+            const outdoorUnit = document.getElementById('outdoorUnit');
+            const diagramBox = document.getElementById('diagramBox');
+            const statusText = document.getElementById('statusText');
+            const tempText = document.getElementById('tempText');
+            const modeText = document.getElementById('modeText');
+            const airBlow = document.getElementById('airBlow');
+            const compStatus = document.getElementById('compStatus');
+
+            if (isOn) {
+                powerBtn.innerText = "Turn OFF System";
+                powerBtn.classList.add('on');
+                indoorUnit.classList.add('active');
+                outdoorUnit.classList.add('active');
+                diagramBox.classList.add('system-running');
+                
+                statusText.innerText = "RUNNING";
+                statusText.style.color = "#34d399";
+                modeText.innerText = "Cooling";
+                airBlow.innerText = "Air Flow: Active (Cool)";
+                airBlow.style.color = "#38bdf8";
+                compStatus.innerText = "Compressor: Working";
+                compStatus.style.color = "#34d399";
+
+                // Simulate cooling effect
+                window.tempInterval = setInterval(() => {
+                    if (currentTemp > 20) {
+                        currentTemp -= 0.5;
+                        tempText.innerText = currentTemp.toFixed(1) + "°C";
+                    }
+                }, 800);
+
+            } else {
+                powerBtn.innerText = "Turn ON System";
+                powerBtn.classList.remove('on');
+                indoorUnit.classList.remove('active');
+                outdoorUnit.classList.remove('active');
+                diagramBox.classList.remove('system-running');
+
+                statusText.innerText = "OFF";
+                statusText.style.color = "#ffffff";
+                modeText.innerText = "Standby";
+                airBlow.innerText = "Air Flow: Stopped";
+                airBlow.style.color = "#94a3b8";
+                compStatus.innerText = "Compressor: Idle";
+                compStatus.style.color = "#ef4444";
+
+                clearInterval(window.tempInterval);
+                currentTemp = 28;
+                tempText.innerText = currentTemp + "°C";
+            }
+        }
+    </script>
+</body>
+</html>
